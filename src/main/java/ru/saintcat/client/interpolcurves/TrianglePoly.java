@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.collections4.CollectionUtils;
 
 /**
  *
@@ -23,7 +24,7 @@ import java.util.Set;
  */
 public class TrianglePoly {
 
-    public static List<List<Vector2D>> triIteratePoly(List<Vector2D> P, Vector2D o, Vector2D V) {
+    public static List<List<Vector2D>> cutLine(List<Vector2D> P, Vector2D o, Vector2D V) {
         int n = P.size();
         V = V.normal();
         List<List<Vector2D>> result = new ArrayList<>();
@@ -97,6 +98,7 @@ public class TrianglePoly {
             Ll.add(c);
             Ll.add(d);
         }
+        System.err.println("BEFORE CONT");
         List<List<Vector2D>> LLl = cont(Ll);
         List<List<Vector2D>> LLr = cont(Lr);
         result = union(LLl, LLr);
@@ -105,16 +107,84 @@ public class TrianglePoly {
 
     private static List<List<Vector2D>> cont(List<Vector2D> Ls) {
         int m = 0;
+        List<Vector2D> C = new ArrayList<>();
+        int c = 0;
         List<List<Vector2D>> LP = new ArrayList<>();
         while (!Ls.isEmpty()) {
-            List<Vector2D> S = Ls;
-            Vector2D a = Ls.get(0);
-            Vector2D b = Ls.get(1);
-            if(m == 0) {
-                Line2D c = new Line2D.Double(a.x, a.y, b.x, b.y);
+            System.err.println("LS NOT EMPTY");
+            List<Vector2D> S = new ArrayList<>(Ls.size());
+            CollectionUtils.addAll(S, Ls);
+            System.err.println("S AFTER COPY = " + S);
+            c = 0;
+            int f = 1;
+            Vector2D a = null;
+            Vector2D b = null;
+            while (f == 1) {
+//                System.err.println("F == 1");
+                c = c + 1;
+                a = Ls.get(0);
+                b = Ls.get(1);
+                if (m == 0) {
+                    C.add(a);
+                    C.add(b);
+                    break;
+                }
+                if (Vector2D.minus(C.get(m), a).isZero()) {
+                    C.add(b);
+                    break;
+                }
+                if (Vector2D.minus(C.get(m), b).isZero()) {
+                    C.add(a);
+                    break;
+                }
+                LCShift(Ls);
+                System.err.println("LS = " + Ls.size());
+                System.err.println("S = " + S.size());
+                if (collectEquals(Ls, S)) {
+                    System.err.print("F = 0");
+
+                    C.remove(m);
+                    m = m - 1 + (f = 0);
+                    break;
+                }
+            }
+            if (f == 1) {
+                Ls.remove(a);
+                Ls.remove(b);
+                m = C.size() - 1;
+                if (m >= 3) {
+                    for (int j = 0; j < m - 3; j++) {
+                        if (Vector2D.minus(C.get(m), C.get(j)).isZero()) {
+                            if (j != 0) {
+                                for (int k = 1; k < j; k++) {
+                                    Ls.add(C.get(0));
+                                    Ls.add(C.get(1));
+                                    C.remove(0);
+                                }
+                                LP.add(minPoly(C));
+                                m = 0;
+                                break;
+                            }
+                        }
+                    }
+
+
+                }
             }
         }
         return LP;
+    }
+
+    private static boolean collectEquals(List<Vector2D> f, List<Vector2D> s) {
+        for (int i = 0; i < f.size(); i++) {
+            if (f.get(i).equals(s.get(i))) {
+            } else {
+                System.out.println("RETURN FALSE");
+                return false;
+            }
+        }
+        System.out.println("RETURN TRUE");
+        return true;
     }
 
     public static <T> List<T> union(List<T> list1, List<T> list2) {
@@ -124,59 +194,6 @@ public class TrianglePoly {
         set.addAll(list2);
 
         return new ArrayList<>(set);
-    }
-
-    public static List<List<Vector2D>> triIteratePoly(List<Vector2D> P) throws Exception {
-        List<List<Vector2D>> LP = new ArrayList<>();
-        int d = dirTest(P);
-        System.out.println(d);
-        while (true) {
-            System.out.println("WHILE OUTER");
-            P = minPoly(P);
-            int n = P.size() - 1;
-            System.out.println(n + " ##############################################################################################");
-            if (n == 3) {
-                LP.add(P);
-                return LP;
-            }
-            int v = 0;
-            while (true) {
-
-                System.out.println("WHILE INNER");
-                List<Vector2D> T = new ArrayList<>();
-                T.add(P.get(0));
-                T.add(P.get(1));
-                T.add(P.get(2));
-                T.add(P.get(0));
-                if (v++ == P.size() - 1) {
-                    throw new Exception();
-                }
-                System.out.println(Arrays.deepToString(T.toArray()));
-                if (d * nf2(P.get(0), P.get(1), P.get(2)) >= 0) {
-                    LCShift(P);
-                    continue;
-                }
-                boolean goToWhile = false;
-                for (int i = 3; i < n; i++) {
-                    int value = octTest(T, P.get(i));
-                    System.out.println("VALUE = " + value);
-                    if (value == 1) {
-                        continue;
-                    } else {
-                        LCShift(P);
-                        goToWhile = true;
-                        break;
-                    }
-                }
-                if (goToWhile) {
-                    continue;
-                }
-                LP.add(T);
-                P.remove(1);
-                break;
-            }
-
-        }
     }
 
     public static int conv2Test(List<Vector2D> P, Vector2D q) {
@@ -331,6 +348,17 @@ public class TrianglePoly {
 //        Arrays.deepToString(P.toArray());
     }
 
+    public static void LCShift2(List<Vector2D> P) {
+//        System.out.println("LCShift IS OPEN FOR ");
+//        Arrays.deepToString(P.toArray());
+        P.add(P.get(2));
+        P.add(P.get(3));
+        P.remove(0);
+        P.remove(1);
+//        System.out.println("END OF LCShift");
+//        Arrays.deepToString(P.toArray());
+    }
+
     public static List<Vector2D> minPoly(List<Vector2D> P) {
 //        System.out.println("MIN POLY IS OPEN");
         int m = 0;
@@ -451,7 +479,6 @@ public class TrianglePoly {
     }
 
     public static int sign(double x) {
-        System.out.println("SIGN IS OPEN FOR " + x);
         if (x > 0) {
             return 1;
         }

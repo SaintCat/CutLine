@@ -27,6 +27,10 @@ public class Vector2D {
         return res;
     }
 
+    public boolean isZero() {
+        return (Math.abs(x) < 2) && (Math.abs(y) < 2);
+    }
+
     public Vector2D rRot() {
         Vector2D res = new Vector2D();
         res.x = this.y;
@@ -125,6 +129,21 @@ public class Vector2D {
         return v.getX() * u.getX() + v.getY() * u.getY();
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        Vector2D copy = (Vector2D) obj;
+        if(copy.x == this.x && copy.y == this.y) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode(); //To change body of generated methods, choose Tools | Templates.
+    }
+    
     @Override
     public Vector2D clone() {
         return new Vector2D(x, y);
