@@ -9,15 +9,122 @@
  */
 package ru.saintcat.client.interpolcurves;
 
+import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
  * @author Roman Chernyshev
  */
 public class TrianglePoly {
+
+    public static List<List<Vector2D>> triIteratePoly(List<Vector2D> P, Vector2D o, Vector2D V) {
+        int n = P.size();
+        V = V.normal();
+        List<List<Vector2D>> result = new ArrayList<>();
+        List<Double> L = new ArrayList<>();
+        List<Vector2D> Ll = new ArrayList<>();
+        List<Vector2D> Lr = new ArrayList<>();
+        List<Double> fies = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            fies.add(nfV(o, V, P.get(i)));
+        }
+        Double max = Collections.max(fies);
+        Double min = Collections.min(fies);
+        if (max * min >= 0) {
+            result.add(P);
+            return result;
+        }
+        for (int i = 0; i < n - 1; i++) {
+            double fi = fies.get(i);
+            double fi_1 = fies.get(i + 1);
+            if ((Math.abs(fi) + Math.abs(fi_1)) == 0) {
+                continue;
+            }
+            if (fi * fi_1 >= 0) {
+                if (fi_1 > 0) {
+                    Ll.add(P.get(i));
+                    Ll.add(P.get(i + 1));
+                } else {
+                    Lr.add(P.get(i));
+                    Lr.add(P.get(i + 1));
+                }
+            }
+            Vector2D q = Vector2D.minus(P.get(i).multOnNumber(fi_1), P.get(i + 1).multOnNumber(fi)).divide(fi_1 - fi);
+            L.add(Vector2D.multipl(Vector2D.minus(q, o), V));
+
+            if (fi < 0) {
+                Ll.add(P.get(i));
+                Ll.add(q);
+            }
+
+            if (fi > 0) {
+                Lr.add(P.get(i));
+                Lr.add(q);
+            }
+
+            if (fi_1 > 0) {
+                Lr.add(q);
+                Lr.add(P.get(i + 1));
+            }
+
+            if (fi_1 < 0) {
+                Ll.add(q);
+                Ll.add(P.get(i + 1));
+            }
+        }
+
+        Collections.sort(L);
+        for (int k = 0; k < L.size() - 1; k++) {
+            double Lk = L.get(k);
+            double Lk_1 = L.get(k + 1);
+            if (Lk_1 - Lk == 0) {
+                continue;
+            }
+            Vector2D c = Vector2D.add(o, V.multOnNumber(Lk));
+            Vector2D d = Vector2D.add(o, V.multOnNumber(Lk_1));
+            double s = octTest(P, Vector2D.add(c, d).multOnNumber(0.5));
+            if (s >= 0) {
+                continue;
+            }
+            Lr.add(c);
+            Lr.add(d);
+            Ll.add(c);
+            Ll.add(d);
+        }
+        List<List<Vector2D>> LLl = cont(Ll);
+        List<List<Vector2D>> LLr = cont(Lr);
+        result = union(LLl, LLr);
+        return result;
+    }
+
+    private static List<List<Vector2D>> cont(List<Vector2D> Ls) {
+        int m = 0;
+        List<List<Vector2D>> LP = new ArrayList<>();
+        while (!Ls.isEmpty()) {
+            List<Vector2D> S = Ls;
+            Vector2D a = Ls.get(0);
+            Vector2D b = Ls.get(1);
+            if(m == 0) {
+                Line2D c = new Line2D.Double(a.x, a.y, b.x, b.y);
+            }
+        }
+        return LP;
+    }
+
+    public static <T> List<T> union(List<T> list1, List<T> list2) {
+        Set<T> set = new HashSet<>();
+
+        set.addAll(list1);
+        set.addAll(list2);
+
+        return new ArrayList<>(set);
+    }
 
     public static List<List<Vector2D>> triIteratePoly(List<Vector2D> P) throws Exception {
         List<List<Vector2D>> LP = new ArrayList<>();
@@ -41,7 +148,7 @@ public class TrianglePoly {
                 T.add(P.get(1));
                 T.add(P.get(2));
                 T.add(P.get(0));
-                if (v++ == P.size() -1) {
+                if (v++ == P.size() - 1) {
                     throw new Exception();
                 }
                 System.out.println(Arrays.deepToString(T.toArray()));
@@ -302,6 +409,20 @@ public class TrianglePoly {
             positive = true;
         }
         return (positive ? 1 : -1) * Math.acos(Vector2D.multipl(V, W) / (V.module() * W.module()));
+    }
+
+    public static double nfV(Vector2D o, Vector2D V, Vector2D p) {
+        double[][] first = new double[1][2];
+        first[0][0] = p.getX() - o.getX();
+        first[0][1] = p.getY() - o.getY();
+
+        double[][] res = new double[2][2];
+        res[0][0] = first[0][0];
+        res[0][1] = first[0][1];
+        res[1][0] = V.x;
+        res[1][1] = V.y;
+        double val = MatrixOperations.det(res);
+        return val;
     }
 
     public static double nf2(Vector2D a, Vector2D b, Vector2D p) {
