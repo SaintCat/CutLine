@@ -8,10 +8,13 @@ import java.util.ResourceBundle;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -35,33 +38,34 @@ public class CurveController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-//        newPolAction(null);
-        triPolyTick();
-        for (int i = 0; i < points.size() - 1; i++) {
-            Line line = new Line(points.get(i).getX(), points.get(i).getY(), points.get(i + 1).getX(), points.get(i + 1).getY());
-            lines.add(line);
-            paintPanel.getChildren().add(line);
-        }
+        newPolAction(null);
+        paintPanel.addEventFilter(MouseEvent.MOUSE_MOVED, new EventHandler<MouseEvent>() {
+
+            @Override
+            public void handle(MouseEvent t) {
+                coordinatsLabel.setText(t.getX()+ " " + t.getY());
+            }
+        });
     }
     private double shift = 0.2;
 
     private void triPolyTick() {
         List<List<Vector2D>> result = new ArrayList<>();
         //        TrianglePoly.triPoly(test, result);
-        points.clear();
-        points.add(new Vector2D(100, 100));
-        points.add(new Vector2D(100, 300));
-        points.add(new Vector2D(300, 300));
-        points.add(new Vector2D(300, 100));
-        points.add(new Vector2D(100, 100));
-        result = TrianglePoly.cutLine(points, new Vector2D(50, 50), new Vector2D(500, 400));
+//        points.clear();
+//        points.add(new Vector2D(100, 100));
+//        points.add(new Vector2D(100, 300));
+//        points.add(new Vector2D(300, 300));
+//        points.add(new Vector2D(300, 100));
+//        points.add(new Vector2D(100, 100));
+        result = TrianglePoly.cutLine(points, new Vector2D(200, 50), new Vector2D(500, 400));
         resultLabel.setText("Результат " + result.size() + " треугольника(ов)");
         double shift = 0;
         int f = 0;
         Random rand = new Random();
         paintPanel.getChildren().removeAll(pols);
         pols.clear();
-        Line p = new Line(50, 50, 500, 400);
+        Line p = new Line(200, 50, 200 + 500, 50 + 400);
         paintPanel.getChildren().add(p);
         for (List<Vector2D> r : result) {
             int rCol1 = rand.nextInt(256);
@@ -191,7 +195,7 @@ public class CurveController implements Initializable {
         points.clear();
         paintPanel.getChildren().removeAll(lines);
         lines.clear();
-        List<Vector2D> pol = apoly(new Vector2D(paintPanel.getPrefWidth() / 2 - 160, paintPanel.getPrefHeight() / 2), 50, 165, 40);
+        List<Vector2D> pol = apoly(new Vector2D(paintPanel.getPrefWidth() / 2 - 160, paintPanel.getPrefHeight() / 2), 10, 200, 20);
         points.addAll(pol);
         points.add(pol.get(0));
         for (int i = 0; i < points.size() - 1; i++) {

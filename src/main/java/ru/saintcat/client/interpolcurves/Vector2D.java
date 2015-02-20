@@ -28,7 +28,7 @@ public class Vector2D {
     }
 
     public boolean isZero() {
-        return (Math.abs(x) < 1) && (Math.abs(y) < 1);
+        return (Math.abs(x) < 0.5) && (Math.abs(y) < 0.5);
     }
 
     public Vector2D rRot() {

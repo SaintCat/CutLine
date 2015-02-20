@@ -10,12 +10,14 @@
 package ru.saintcat.client.interpolcurves;
 
 import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 import org.apache.commons.collections4.CollectionUtils;
 
 /**
@@ -26,11 +28,13 @@ public class TrianglePoly {
 
     public static List<List<Vector2D>> cutLine(List<Vector2D> P, Vector2D o, Vector2D V) {
         int n = P.size();
+        System.out.println(V);
         V = V.normal();
+         System.out.println(V);
         List<List<Vector2D>> result = new ArrayList<>();
         List<Double> L = new ArrayList<>();
-        List<Vector2D> Ll = new ArrayList<>();
-        List<Vector2D> Lr = new ArrayList<>();
+        List<MyLine2D> Ll = new ArrayList<>();
+        List<MyLine2D> Lr = new ArrayList<>();
         List<Double> fies = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             fies.add(nfV(o, V, P.get(i)));
@@ -49,128 +53,140 @@ public class TrianglePoly {
             }
             if (fi * fi_1 >= 0) {
                 if (fi_1 > 0) {
-                    Ll.add(P.get(i));
-                    Ll.add(P.get(i + 1));
+                    Lr.add(new MyLine2D(P.get(i), P.get(i + 1)));
                 } else {
-                    Lr.add(P.get(i));
-                    Lr.add(P.get(i + 1));
+                    Ll.add(new MyLine2D(P.get(i), P.get(i + 1)));
                 }
+                continue;
             }
             Vector2D q = Vector2D.minus(P.get(i).multOnNumber(fi_1), P.get(i + 1).multOnNumber(fi)).divide(fi_1 - fi);
             L.add(Vector2D.multipl(Vector2D.minus(q, o), V));
-
             if (fi < 0) {
-                Ll.add(P.get(i));
-                Ll.add(q);
+                Ll.add(new MyLine2D(P.get(i), q));
             }
-
             if (fi > 0) {
-                Lr.add(P.get(i));
-                Lr.add(q);
+                Lr.add(new MyLine2D(P.get(i), q));
             }
-
             if (fi_1 > 0) {
-                Lr.add(q);
-                Lr.add(P.get(i + 1));
+                Lr.add(new MyLine2D(q, P.get(i + 1)));
             }
-
             if (fi_1 < 0) {
-                Ll.add(q);
-                Ll.add(P.get(i + 1));
+                Ll.add(new MyLine2D(q, P.get(i + 1)));
             }
         }
-
+        System.out.println("##########" + Ll);
+        System.out.println("##########" + Lr);
+        System.out.println("##########" + L);
         Collections.sort(L);
+        System.out.println("##########" + L);
         for (int k = 0; k < L.size() - 1; k++) {
             double Lk = L.get(k);
+            System.out.println("Lk " + Lk);
             double Lk_1 = L.get(k + 1);
+            System.out.println("Lk + 1 " + Lk_1);
             if (Lk_1 - Lk == 0) {
+                System.out.println("CONTINUE1");
                 continue;
             }
             Vector2D c = Vector2D.add(o, V.multOnNumber(Lk));
+            System.out.println("c " + c);
             Vector2D d = Vector2D.add(o, V.multOnNumber(Lk_1));
+            System.out.println("d " + d);
+            System.out.println("middle point " + Vector2D.add(c, d).multOnNumber(0.5));
             double s = octTest(P, Vector2D.add(c, d).multOnNumber(0.5));
-            if (s >= 0) {
+            System.out.println("oct test = " + s);
+            if (s > 0) {
+                System.out.println("CONTINUE2");
                 continue;
             }
-            Lr.add(c);
-            Lr.add(d);
-            Ll.add(c);
-            Ll.add(d);
+            Lr.add(new MyLine2D(c, d));
+            Ll.add(new MyLine2D(c, d));
         }
-        System.err.println("BEFORE CONT");
+        System.out.println("BEFORE CONT");
         System.out.println("##########" + Ll);
         System.out.println("##########" + Lr);
-        List<List<Vector2D>> LLl = cont(Ll);
-
-        List<List<Vector2D>> LLr = cont(Lr);
-        
-        result = union(LLl, LLr);
+        List<List<Vector2D>> LLl = cont(transform(Ll));
+        System.out.println("ZZZZ##########" + LLl);
+        List<List<Vector2D>> LLr = cont(transform(Lr));
+        System.out.println("ZZZZ##########" + LLr);
+        List<List<Vector2D>> ff = union(LLl, LLr);
+        result.addAll(ff);
         return result;
     }
 
+    private static List<Vector2D> transform(List<MyLine2D> l) {
+        List<Vector2D> res = new ArrayList<>();
+        for (MyLine2D ln : l) {
+            res.add(ln.getFirstPoint());
+            res.add(ln.getSecondPoint());
+        }
+        return res;
+    }
+
     private static List<List<Vector2D>> cont(List<Vector2D> Ls) {
-        int m = 0;
+        System.out.println(Ls);
+//        int m = 0;
         List<Vector2D> C = new ArrayList<>();
-        int c = 0;
         List<List<Vector2D>> LP = new ArrayList<>();
         while (!Ls.isEmpty()) {
-            System.err.println("LS NOT EMPTY");
+//            System.out.println("LS NOT EMPTY");
             List<Vector2D> S = new ArrayList<>(Ls.size());
             CollectionUtils.addAll(S, Ls);
-            System.err.println("S AFTER COPY = " + S);
-            c = 0;
+//            System.out.println("S AFTER COPY = " + S);
             int f = 1;
             Vector2D a = null;
             Vector2D b = null;
             while (f == 1) {
-                System.err.println("F == 1");
-                c = c + 1;
+//                System.out.println("F == 1");
                 a = Ls.get(0);
                 b = Ls.get(1);
-                if (m == 0) {
+                if (C.size() == 0) {
                     C.add(a);
                     C.add(b);
                     break;
                 }
-                if (Vector2D.minus(C.get(m), a).isZero()) {
+                if (Vector2D.minus(C.get(C.size() - 1), a).isZero()) {
+                    System.out.println("ZZZZZZZZZZZZz");
                     C.add(b);
                     break;
                 }
-                if (Vector2D.minus(C.get(m), b).isZero()) {
+                if (Vector2D.minus(C.get(C.size() - 1), b).isZero()) {
+                    System.out.println("FFFFFFFFFFFFFF");
                     C.add(a);
                     break;
                 }
                 LCShift(Ls);
-                System.err.println("LS = " + Ls.size());
-                System.err.println("S = " + S.size());
+//                System.out.println("LS = " + Ls.size());
+//                System.out.println("S = " + S.size());
                 if (collectEquals(Ls, S)) {
-                    System.err.print("F = 0");
+//                    System.out.print("F = 0");
 
-                    C.remove(m);
-                    m = m - 1 + (f = 0);
+                    C.remove(C.size() - 1);
+//                    m = m - 1 + (f = 0);
                     break;
                 }
             }
             if (f == 1) {
-                System.err.println("REMOVING");
                 Ls.remove(a);
                 Ls.remove(b);
-                m = C.size() - 2;
-                if (m >= 4) {
-                    for (int j = 0; j < m - 3; j++) {
-                        if (Vector2D.minus(C.get(m), C.get(j)).isZero()) {
+//                m = C.size() - 1;
+                if (C.size() >= 3) {
+                    for (int j = 0; j <= C.size() - 3; j++) {
+//                        System.out.println("INNER");
+//                        System.out.println("Cm = " + C.get(m));
+//                        System.out.println("Cj = " + C.get(j));
+                        if (Vector2D.minus(C.get(C.size() - 1), C.get(j)).isZero()) {
                             if (j != 0) {
-                                for (int k = 1; k < j; k++) {
-                                    System.err.println("ADD");
+                                for (int k = 1; k <= j; k++) {
                                     Ls.add(C.get(0));
                                     Ls.add(C.get(1));
                                     C.remove(0);
                                 }
-                                LP.add(C);
-                                m = 0;
-                                break;
                             }
+                            System.out.println("ADDDDDDDDDDDDDDD");
+                            LP.add(C);
+//                            m = 0;
+                            break;
                         }
                     }
 
@@ -184,11 +200,11 @@ public class TrianglePoly {
         for (int i = 0; i < f.size(); i++) {
             if (f.get(i).equals(s.get(i))) {
             } else {
-                System.err.println("RETURN FALSE");
+                System.out.println("RETURN FALSE");
                 return false;
             }
         }
-        System.err.println("RETURN TRUE");
+        System.out.println("RETURN TRUE");
         return true;
     }
 
@@ -221,80 +237,6 @@ public class TrianglePoly {
         return e - 1;
     }
 
-    public static int triPoly(List<Vector2D> P, List<List<Vector2D>> triangles) {
-        System.out.println("####################################################");
-        System.out.println("NEW VECTOR WITH SIZE" + " " + P.size());
-        for (Vector2D asd : P) {
-            System.out.println(asd.toString());
-        }
-        P = minPoly(P);
-        System.out.println("MINIMAZE POLY" + " " + P.size());
-        for (Vector2D asd : P) {
-            System.out.println(asd.toString());
-        }
-        System.out.println("####################################################");
-        int n = P.size() - 1;
-        if (n == 3) {
-            System.out.println("BECAUSE SIZE IS 4, WE ARE GOING TO END THIS STEP");
-            System.out.println("NEW TRIANGLE ADDED ^^^^^^^^^");
-            triangles.add(P);
-            System.out.println("RETURN SIZE = " + triangles.size());
-            return triangles.size();
-        }
-
-        int d = dirTest(P);
-        System.out.println("DIR TEST RETURN " + d);
-        int k = 3;
-        System.out.println("CONV2(P) RETURN " + conv2(P));
-        if (conv2(P) == 1) {
-            System.out.println("BECAUSE POLYGON IS VIPUHLIY, GOING TO RETURN FUCTION");
-            resurnFunction(P, k - 1, n, triangles);
-            System.out.println("RETURN SIZE = " + triangles.size());
-            return triangles.size();
-        } else {
-            System.out.println("POLYGON IS NOT VIPUHLIY");
-            while (nf2(P.get(n - 1), P.get(0), P.get(1)) > 0) {
-                System.out.println("LCShift");
-                LCShift(P);
-            }
-            boolean flag = true;
-            while (flag) {
-                flag = false;
-                while (true) {
-                    if (k == n - 1) {
-                        System.out.println("K = N - 1 GOING TO RETURN FUNC");
-                        resurnFunction(P, k - 1, n, triangles);
-                        System.out.println("RETURN SIZE = " + triangles.size());
-                        return triangles.size();
-                    }
-                    double val = d * nf2(P.get(0), P.get(1), P.get(k - 1));
-                    if (val >= 0) {
-                        k++;
-                    } else {
-                        break;
-                    }
-                }
-                for (int i = k + 1; i < n - 1; i++) {
-                    double c = crossSegm(P.get(0), P.get(k - 1), P.get(i), P.get(i + 1));
-                    if (c <= 0) {
-                    } else {
-                        System.out.println("CROSS SEGM RETURN POSITIVE VALUE, GOING TO RETURN FUNCTION");
-                        k = i;
-                        flag = true;
-                        break;
-                    }
-                }
-                if (!flag) {
-                    System.out.println("RETURN FUNCTION IN END GO TO");
-                    resurnFunction(P, k - 1, n, triangles);
-                    System.out.println("RETURN SIZE = " + triangles.size());
-                    return triangles.size();
-                }
-            }
-        }
-        return 0;
-    }
-
     public static List<Vector2D> cloneList(List<Vector2D> list) {
         List<Vector2D> clone = new ArrayList<>(list.size());
         for (Vector2D item : list) {
@@ -325,31 +267,12 @@ public class TrianglePoly {
         return (((0 <= res[0][0] && res[0][0] <= 1) ? 1 : 0) * ((0 <= res[0][1] && res[0][1] <= 1) ? 1 : 0));
     }
 
-    public static void resurnFunction(List<Vector2D> P, int k, int n, List<List<Vector2D>> triangles) {
-        System.out.println("P size = " + P.size() + "k= " + k + "n= " + n);
-        List<Vector2D> first = new ArrayList<>();
-        first.add(P.get(0));
-        //??
-        for (int i = k; i <= n; i++) {
-            first.add(P.get(i));
-        }
-        first.add(P.get(0));
-        triPoly(first, triangles);
-        first.clear();
-        first.add(P.get(0));
-        for (int i = 1; i <= k; i++) {
-            first.add(P.get(i));
-        }
-        first.add(P.get(0));
-        triPoly(first, triangles);
-    }
-
     public static void LCShift(List<Vector2D> P) {
 //        System.out.println("LCShift IS OPEN FOR ");
 //        Arrays.deepToString(P.toArray());
         P.add(P.get(0));
-//        P.add(P.get(1));
-//        P.remove(0);
+        P.add(P.get(1));
+        P.remove(0);
         P.remove(0);
 //        System.out.println("END OF LCShift");
 //        Arrays.deepToString(P.toArray());
@@ -459,11 +382,7 @@ public class TrianglePoly {
         return val;
     }
 
-    public static double nf2(Vector2D a, Vector2D b, Vector2D p) {
-//        System.out.println("NF2 IS OPEN  FOR");
-//        System.out.println(a.toString());
-//        System.out.println(b.toString());
-//        System.out.println(p.toString());
+    private static double nf2(Vector2D a, Vector2D b, Vector2D p) {
         double[][] first = new double[1][2];
         first[0][0] = p.getX() - a.getX();
         first[0][1] = p.getY() - a.getY();
@@ -471,17 +390,9 @@ public class TrianglePoly {
         double[][] second = new double[2][1];
         second[0][0] = b.getY() - a.getY();
         second[1][0] = -(b.getX() - a.getX());
-        double[][] res = new double[2][2];
-        res[0][0] = first[0][0];
-        res[0][1] = first[0][1];
-        res[1][0] = b.x - a.x;
-        res[1][1] = b.y - a.y;
-        double val = MatrixOperations.det(res);
-//        System.out.println("NF2 RETURN " + val);
-        return val;
-//        double[][] asd = MatrixOperations.multiply(first, second);
-////        System.out.println("NF2 RETURN " + asd[0][0]);
-//        return asd[0][0];
+
+        double[][] res = MatrixOperations.multiply(first, second);
+        return res[0][0];
     }
 
     public static int sign(double x) {
@@ -494,7 +405,7 @@ public class TrianglePoly {
         return 0;
     }
 
-    public static int octTest(List<Vector2D> P, Vector2D q) {
+    private static int octTest(List<Vector2D> P, Vector2D q) {
         double s = 0;
         int w = 0;
         for (int i = 0; i < P.size(); i++) {
@@ -528,7 +439,8 @@ public class TrianglePoly {
             s += delta;
             w = v;
         }
-        return 1 - 2 * sign((s));
+        System.out.print(1 - 2 * sign((s)));
+        return 1 - 2 * sign((Math.abs(s)));
     }
 
     private static int oct(double x, double y) {

@@ -27,5 +27,10 @@
          <font>
             <Font size="20.0" />
          </font></Label>
+      <Label fx:id="coordinatsLabel" layoutX="625.0" layoutY="422.0" prefHeight="50.0" prefWidth="204.0">
+         <font>
+            <Font size="20.0" />
+         </font>
+      </Label>
     </children>
 </AnchorPane>
