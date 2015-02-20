@@ -35,20 +35,34 @@ public class CurveController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        newPolAction(null);
+//        newPolAction(null);
+        triPolyTick();
+        for (int i = 0; i < points.size() - 1; i++) {
+            Line line = new Line(points.get(i).getX(), points.get(i).getY(), points.get(i + 1).getX(), points.get(i + 1).getY());
+            lines.add(line);
+            paintPanel.getChildren().add(line);
+        }
     }
     private double shift = 0.2;
 
     private void triPolyTick() {
         List<List<Vector2D>> result = new ArrayList<>();
         //        TrianglePoly.triPoly(test, result);
-        result = TrianglePoly.cutLine(points, new Vector2D(300, 300), new Vector2D(400, 400));
+        points.clear();
+        points.add(new Vector2D(100, 100));
+        points.add(new Vector2D(100, 300));
+        points.add(new Vector2D(300, 300));
+        points.add(new Vector2D(300, 100));
+        points.add(new Vector2D(100, 100));
+        result = TrianglePoly.cutLine(points, new Vector2D(50, 50), new Vector2D(500, 400));
         resultLabel.setText("Результат " + result.size() + " треугольника(ов)");
         double shift = 0;
         int f = 0;
         Random rand = new Random();
         paintPanel.getChildren().removeAll(pols);
         pols.clear();
+        Line p = new Line(50, 50, 500, 400);
+        paintPanel.getChildren().add(p);
         for (List<Vector2D> r : result) {
             int rCol1 = rand.nextInt(256);
             int rCol2 = rand.nextInt(256);

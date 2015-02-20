@@ -99,8 +99,12 @@ public class TrianglePoly {
             Ll.add(d);
         }
         System.err.println("BEFORE CONT");
+        System.out.println("##########" + Ll);
+        System.out.println("##########" + Lr);
         List<List<Vector2D>> LLl = cont(Ll);
+
         List<List<Vector2D>> LLr = cont(Lr);
+        
         result = union(LLl, LLr);
         return result;
     }
@@ -120,7 +124,7 @@ public class TrianglePoly {
             Vector2D a = null;
             Vector2D b = null;
             while (f == 1) {
-//                System.err.println("F == 1");
+                System.err.println("F == 1");
                 c = c + 1;
                 a = Ls.get(0);
                 b = Ls.get(1);
@@ -149,25 +153,26 @@ public class TrianglePoly {
                 }
             }
             if (f == 1) {
+                System.err.println("REMOVING");
                 Ls.remove(a);
                 Ls.remove(b);
-                m = C.size() - 1;
-                if (m >= 3) {
+                m = C.size() - 2;
+                if (m >= 4) {
                     for (int j = 0; j < m - 3; j++) {
                         if (Vector2D.minus(C.get(m), C.get(j)).isZero()) {
                             if (j != 0) {
                                 for (int k = 1; k < j; k++) {
+                                    System.err.println("ADD");
                                     Ls.add(C.get(0));
                                     Ls.add(C.get(1));
                                     C.remove(0);
                                 }
-                                LP.add(minPoly(C));
+                                LP.add(C);
                                 m = 0;
                                 break;
                             }
                         }
                     }
-
 
                 }
             }
@@ -179,11 +184,11 @@ public class TrianglePoly {
         for (int i = 0; i < f.size(); i++) {
             if (f.get(i).equals(s.get(i))) {
             } else {
-                System.out.println("RETURN FALSE");
+                System.err.println("RETURN FALSE");
                 return false;
             }
         }
-        System.out.println("RETURN TRUE");
+        System.err.println("RETURN TRUE");
         return true;
     }
 
@@ -342,7 +347,9 @@ public class TrianglePoly {
     public static void LCShift(List<Vector2D> P) {
 //        System.out.println("LCShift IS OPEN FOR ");
 //        Arrays.deepToString(P.toArray());
-        P.add(P.get(1));
+        P.add(P.get(0));
+//        P.add(P.get(1));
+//        P.remove(0);
         P.remove(0);
 //        System.out.println("END OF LCShift");
 //        Arrays.deepToString(P.toArray());
@@ -395,7 +402,6 @@ public class TrianglePoly {
                 res.add(P.get(j));
             }
         }
-//        System.out.println("MIN POLY RETURN");
         return res;
     }
 
